@@ -32,6 +32,7 @@ const map = [].map
  */
 
 export default function batch(db, storeName, ops) {
+  if (arguments.length !== 3) throw new TypeError('invalid arguments length')
   if (typeof storeName !== 'string') throw new TypeError('invalid "storeName"')
   if (!Array.isArray(ops) && !isPlainObj(ops)) throw new TypeError('invalid "ops"')
   if (isPlainObj(ops)) {
@@ -41,8 +42,7 @@ export default function batch(db, storeName, ops) {
   }
   ops.forEach((op) => {
     if (!isPlainObj(op)) throw new TypeError('invalid op')
-    if (['add', 'put', 'del'].indexOf(op.type) === -1) throw new TypeError(`invalid "${op.type}"`)
-    if (!op.key) throw new TypeError(`key is required: ${JSON.stringify(op)}`)
+    if (['add', 'put', 'del'].indexOf(op.type) === -1) throw new TypeError(`invalid type "${op.type}"`)
   })
 
   return new Promise((resolve, reject) => {
@@ -59,17 +59,10 @@ export default function batch(db, storeName, ops) {
       const { type, key } = ops[currentIndex]
       if (type === 'del') return request(store.delete(key))
 
-      let val = ops[currentIndex].val || ops[currentIndex].value
+      const val = ops[currentIndex].val || ops[currentIndex].value
+      if (key && store.keyPath) val[store.keyPath] = key
 
-      if (store.keyPath) {
-        if (typeof val !== 'undefined') {
-          val[store.keyPath] = key
-        } else {
-          val = key
-        }
-      }
-
-      countUniqueIndexes(store, val, (err, uniqueRecordsCounter) => {
+      countUniqueIndexes(store, key, val, (err, uniqueRecordsCounter) => {
         if (err) return reject(err)
         if (uniqueRecordsCounter) return reject(new Error('Unique index ConstraintError'))
         request(store.keyPath ? store[type](val) : store[type](val, key))
@@ -100,7 +93,7 @@ export default function batch(db, storeName, ops) {
  * @param {Function} cb(err, uniqueRecordsCounter)
  */
 
-function countUniqueIndexes(store, val, cb) {
+function countUniqueIndexes(store, key, val, cb) {
   // rely on native support
   if (!isSafari && global.indexedDB !== global.shimIndexedDB) return cb()
 
@@ -121,10 +114,10 @@ function countUniqueIndexes(store, val, cb) {
   let uniqueRecordsCounter = 0
 
   indexes.forEach(([index, indexVal]) => {
-    const req = index.getKey(indexVal)
+    const req = index.getKey(indexVal) // get primaryKey to compare with updating value
     req.onerror = handleError(cb)
     req.onsuccess = (e) => {
-      if (e.target.result) uniqueRecordsCounter += 1
+      if (e.target.result && e.target.result !== key) uniqueRecordsCounter += 1
       totalRequestsCounter -= 1
       if (totalRequestsCounter === 0) cb(null, uniqueRecordsCounter)
     }
