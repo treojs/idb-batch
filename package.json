@@ -21,6 +21,10 @@
     "test": "eslint src/ test/ && browserify-test -t babelify && SAUCE_USERNAME=idb-batch zuul --tunnel-host http://treojs.com --no-coverage -- test/index.js",
     "development": "browserify-test -t babelify --watch"
   },
+  "dependencies": {
+    "is-plain-obj": "^1.1.0",
+    "is-safari": "^1.0.0"
+  },
   "devDependencies": {
     "babel-cli": "^6.3.13",
     "babel-core": "^6.3.13",
