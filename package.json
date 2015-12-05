@@ -1,0 +1,37 @@
+{
+  "name": "idb-batch",
+  "description": "Perform batch operation on IndexedDB",
+  "repository": "treojs/idb-batch",
+  "version": "1.0.0",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "keywords": [
+    "indexeddb",
+    "idb",
+    "treo",
+    "offline",
+    "transaction",
+    "batch"
+  ],
+  "scripts": {
+    "prepublish": "babel src --out-dir lib",
+    "test": "eslint src/ test/ && browserify-test -t babelify && SAUCE_USERNAME=idb-batch zuul --tunnel-host http://treojs.com --no-coverage -- test/index.js",
+    "development": "browserify-test -t babelify --watch"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.3.13",
+    "babel-core": "^6.3.13",
+    "babel-eslint": "^5.0.0-beta4",
+    "babel-plugin-add-module-exports": "^0.1.1",
+    "babel-preset-es2015": "^6.3.13",
+    "babelify": "^7.2.0",
+    "browserify-test": "^2.1.2",
+    "chai": "^3.4.1",
+    "eslint": "^1.10.2",
+    "eslint-config-airbnb": "^2.0.0",
+    "zuul": "^3.8.0"
+  }
+}
