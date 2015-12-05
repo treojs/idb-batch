@@ -51,7 +51,7 @@ export default function batch(db, storeName, ops) {
     const results = []
     let currentIndex = 0
 
-    tr.onerror = tr.onabort = handleError(reject)
+    tr.onerror = handleError(reject)
     tr.oncomplete = () => resolve(results)
     next()
 
@@ -64,6 +64,9 @@ export default function batch(db, storeName, ops) {
 
       countUniqueIndexes(store, key, val, (err, uniqueRecordsCounter) => {
         if (err) return reject(err)
+
+        // we don't abort transaction here, and just stops execution
+        // browsers implementation also don't abort, and just throw an error
         if (uniqueRecordsCounter) return reject(new Error('Unique index ConstraintError'))
         request(store.keyPath ? store[type](val) : store[type](val, key))
       })

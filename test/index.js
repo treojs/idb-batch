@@ -95,8 +95,31 @@ describe('idb-schema', () => {
   })
 
   it('validates unique indexes', async () => {
-    expect(await count(db, 'books')).equal(0)
-    expect(await count(db, 'magazines')).equal(0)
+    const errors = []
+
+    try {
+      await batch(db, 'books', {
+        1: { title: 'book', author: 'Petr' },
+        2: { title: 'book', author: 'John' }, // error byTitle index
+        3: { title: 'my book', author: 'John' },
+      })
+    } catch (err) {
+      errors.push('simple index')
+    }
+
+    try {
+      await batch(db, 'magazines', [
+        { type: 'add', value: { name: 'magazine', frequency: 1 } },
+        { type: 'add', value: { name: 'magazine', frequency: 1 } }, // error byNameAndFrequency index
+        { type: 'add', value: { name: 'magazine', frequency: 2 } },
+      ])
+    } catch (err) {
+      errors.push('compound index')
+    }
+
+    expect(errors).eql(['simple index', 'compound index'])
+    expect(await count(db, 'books')).equal(1) // because transaction wasn't aborted
+    expect(await count(db, 'magazines')).equal(1)
   })
 
   it('validates arguments', () => {
