@@ -1,9 +1,14 @@
-// setup PhantomJS & Webkit env
+// setup PhantomJS, Webkit, IE env
 import 'polyfill-function-prototype-bind'
 import 'indexeddbshim'
 import 'regenerator/runtime'
 import ES6Promise from 'es6-promise'
+
 ES6Promise.polyfill()
+if (navigator.userAgent.indexOf('Trident') !== -1) {
+  console.log('force IE to enable compound indexes using indexeddbshim') // eslint-disable-line
+  window.shimIndexedDB.__useShim()
+}
 
 import { expect } from 'chai'
 import { del, open } from 'idb-factory'
