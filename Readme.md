@@ -29,7 +29,7 @@ await batch(db, 'magazines', [
   { type: 'add', key: 1, value: { name: 'M1', frequency: 12 } },
   { type: 'add', key: 2, value: { name: 'M2', frequency: 24 } },
   { type: 'add', key: 3, value: { name: 'M3', frequency: 6 } },
-  { type: 'del', key: 4,
+  { type: 'del', key: 4 },
 ]).then((result) => {
   console.log(result) // [1, 2, 3, undefined]
 }).catch((err) => {
@@ -54,7 +54,7 @@ Each operation is an object with 3 possible properties: `type`, `key`, `value`.
 ```js
 await batch(db, 'books', [
   { type: 'add', key: 1, value: { name: 'M1', frequency: 12 } },
-  { type: 'del', key: 2
+  { type: 'del', key: 2 }
   { type: 'put', value: { id: 3, name: 'M3', frequency: 24 } }, // no key
 ])
 ```
