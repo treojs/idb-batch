@@ -8,8 +8,8 @@
 [![](https://img.shields.io/travis/treojs/idb-batch.svg)](https://travis-ci.org/treojs/idb-batch)
 [![](http://img.shields.io/npm/dm/idb-batch.svg)](https://npmjs.org/package/idb-batch)
 
-Create/update/remove objects from IndexedDB store in one transaction [without blocking main tread](http://stackoverflow.com/questions/10471759/inserting-large-quantities-in-indexeddbs-objectstore-blocks-ui).
-This module also manually validates unique indexes fixing bugs in [WebKit](https://bugs.webkit.org/show_bug.cgi?id=149107)
+Create/update/remove objects from IndexedDB store in one transaction [without blocking the main thread](http://stackoverflow.com/questions/10471759/inserting-large-quantities-in-indexeddbs-objectstore-blocks-ui).
+This module also manually validates unique indexes, fixing bugs in [WebKit](https://bugs.webkit.org/show_bug.cgi?id=149107)
 and [IndexedDBShim](https://github.com/axemclion/IndexedDBShim/issues/56).
 
 ## Example
@@ -44,12 +44,12 @@ function upgradeCallback(e) {
 
 ### batch(db: IDBDatabase, storeName: String, ops: Array|Object)
 
-It creates `readwrite` transaction to `storeName`,
-and performs `ops` sequentially. It returns `Promise` which resolves with results of each request.
+This creates a `readwrite` transaction to `storeName`,
+and performs `ops` sequentially. It returns a `Promise` which resolves with the results of each request.
 
 **Array notation** is inspired by [LevelUP](https://github.com/Level/levelup#batch).
 Each operation is an object with 3 possible properties: `type`, `key`, `value`.
-`type` is either `add`, `put`, or `del`, and `key` can be optional, when store has `keyPath` and value contains it.
+`type` is either `add`, `put`, or `del`, and `key` is optional (when the store has a `keyPath` and the supplied value contains it).
 
 ```js
 await batch(db, 'books', [
@@ -59,8 +59,8 @@ await batch(db, 'books', [
 ])
 ```
 
-**Object notation** is a sugar on top of array notation for `put`/`del` operations.
-Set `key` to `null` in order to delete value.
+**Object notation** is sugar on top of array notation for `put`/`del` operations.
+Set `key` to `null` in order to delete a value.
 
 ```js
 await batch(db, 'storage', {
@@ -72,10 +72,10 @@ await batch(db, 'storage', {
 
 ### ConstraintError
 
-If during sequential execution one of operations throws `ConstraintError`,
-`Promise` rejects with error, but previous successful operations commit.
-This behavior can change in future versions,
-when I will figure out how to properly abort transaction in IndexedDBShim.
+If during sequential execution one of the operations throws a `ConstraintError`,
+the `Promise` rejects with an error, but previous successful operations will commit.
+This behavior may change in future versions,
+as I figure out how to properly abort transactions in IndexedDBShim.
 
 ## LICENSE
 
