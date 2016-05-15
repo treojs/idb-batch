@@ -309,7 +309,7 @@ function validateAndCanonicalizeOps(ops) {
   }
   if (isPlainObj(ops)) {
     ops = Object.keys(ops).map((key) => {
-      return { key, value: ops[key], type: ops[key] === null ? 'del' : 'put' }
+      return { key, value: typeof ops[key] === 'string' ? ops[key].replace(/^\0/, '') : ops[key], type: ops[key] === '\0' ? 'del' : 'put' }
     })
   }
   ops.forEach((op) => {

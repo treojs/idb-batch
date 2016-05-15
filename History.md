@@ -2,6 +2,9 @@
 
 ## ?
 
+* Breaking change: for object syntax, modify merge patch behavior to use '\0'
+  for deletions and requiring strings with initial '\0' to include one extra;
+  add tests
 * Breaking change (minor): Switch to promise rejections instead of immediately synchronous errors for `batch()`/`transactionalBatch()`
 * Feature: Support `transactionalBatch`
 * Feature: Added `getStoreNames`

@@ -152,13 +152,14 @@ stores or to involve sub-objects. You should instead use functions to conduct
 such operations.
 
 **Object notation** is sugar on top of array notation for `put`/`del`
-operations. Set `key` to `null` in order to delete a value.
+operations. Set `key` to `'\0'` in order to delete a value.
 
 ```js
 await batch(db, 'storage', {
   key1: 'update value',
-  key2: null, // delete value
+  key2: '\0', // delete value
   key3: 'new value',
+  key4: '\0\0abc' // To  get a single initial NUL, an extra one must be added
 })
 ```
 

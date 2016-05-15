@@ -50,8 +50,8 @@ describe('idb-batch', () => {
     expect(await get(db, 'books', 3)).eql(undefined)
 
     const res2 = await batch(db, 'books', {
-      key1: null,
-      key2: null,
+      key1: '\0',
+      key2: '\0',
       3: { title: 'B3', author: 'Bob' },
     })
 
@@ -94,13 +94,17 @@ describe('idb-batch', () => {
       key2: 123456,
       key3: [1, 2, 3],
       key4: { foo: 'bar' },
+      key5: '\0abc',
+      key6: '\0\0def',
     })
 
-    expect(await count(db, 'storage')).equal(4)
+    expect(await count(db, 'storage')).equal(6)
     expect(await get(db, 'storage', 'key1')).equal('value')
     expect(await get(db, 'storage', 'key2')).equal(123456)
     expect(await get(db, 'storage', 'key3')).eql([1, 2, 3])
     expect(await get(db, 'storage', 'key4')).eql({ foo: 'bar' })
+    expect(await get(db, 'storage', 'key5')).eql('abc')
+    expect(await get(db, 'storage', 'key6')).eql('\0def')
   })
 
   it('validates unique indexes', async () => {
