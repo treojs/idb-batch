@@ -131,16 +131,37 @@ describe('idb-batch', () => {
     expect(await count(db, 'magazines')).equal(1)
   })
 
-  it('validates arguments', () => {
-    expect(() => batch(db, 'books')).throws('invalid arguments length')
-    expect(() => batch(db, 123, { a: 1 })).throws('invalid "storeName"')
-    expect(() => batch(db, 'books', JSON.stringify({ a: 1 }))).throws('invalid "ops"')
-
-    expect(() => batch(db, 'magazines', [{ type: 'delete', key: 'foo' }])).throws('invalid type "delete"')
-    expect(() => batch(db, 'magazines', [['put', '1']])).throws('invalid op')
+  it('validates arguments', async (done) => {
+    const errors = []
+    const funcs = [
+      async () => await batch(db, 'books'),
+      async () => await batch(db, 123, { a: 1 }),
+      async () => await batch(db, 'books', JSON.stringify({ a: 1 })),
+      async () => await batch(db, 'magazines', [{ type: 'delete', key: 'foo' }]),
+      async () => await batch(db, 'magazines', [['put', '1']]),
+    ]
+    funcs.forEach(async (func, i) => {
+      try {
+        await func()
+      } catch (err) {
+        errors.push(err)
+      }
+      if (i === funcs.length - 1) {
+        expect(errors).eql([
+          'invalid arguments length',
+          'invalid "storeName"',
+          'invalid "ops"',
+          'invalid type "delete"',
+          'invalid op',
+        ].map((msg) => new TypeError(msg)))
+        done()
+      }
+    })
   })
 
   describe('transactionalBatch', () => {
+    this.timeout(5000)
+
     it('supports batch in series', async () => {
       let gotCbResults = false
       let gotCb2Results = false

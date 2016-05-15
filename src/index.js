@@ -35,9 +35,13 @@ const map = [].map
  */
 
 export default function batch(db, storeName, ops, opts) {
-  if (typeof storeName !== 'string') throw new TypeError('invalid "storeName"')
-  if (![3, 4].includes(arguments.length)) throw new TypeError('invalid arguments length')
-  validateAndCanonicalizeOps(ops)
+  if (typeof storeName !== 'string') return Promise.reject(new TypeError('invalid "storeName"'))
+  if (![3, 4].includes(arguments.length)) return Promise.reject(new TypeError('invalid arguments length'))
+  try {
+    validateAndCanonicalizeOps(ops)
+  } catch (err) {
+    return Promise.reject(err)
+  }
   return transactionalBatch(db, { [storeName]: ops }, opts).then((arr) => arr[0][storeName])
 }
 
@@ -79,7 +83,7 @@ export function getStoreNames(storeOpsArr) {
  */
 
 export function transactionalBatch(tr, storeOpsArr, opts = { parallel: false, extraStores: [], resolveEarly: false, adapterCb: null }) {
-  if (![2, 3].includes(arguments.length)) throw new TypeError('invalid arguments length')
+  if (![2, 3].includes(arguments.length)) return Promise.reject(new TypeError('invalid arguments length'))
   if (isPlainObj(storeOpsArr)) storeOpsArr = [storeOpsArr]
   const storeOpsArrIter = storeOpsArr.keys()
   opts = opts || {}

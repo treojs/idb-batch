@@ -2,6 +2,7 @@
 
 ## ?
 
+* Breaking change (minor): Switch to promise rejections instead of immediately synchronous errors for `batch()`/`transactionalBatch()`
 * Feature: Support `transactionalBatch`
 * Feature: Added `getStoreNames`
 * Feature: Allow preexisting transaction to be supplied to `batch()` (or `transactionalBatch()`)
