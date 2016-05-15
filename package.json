@@ -31,6 +31,7 @@
     "babel-eslint": "^5.0.0-beta4",
     "babel-plugin-add-module-exports": "^0.1.1",
     "babel-plugin-transform-async-to-generator": "^6.3.13",
+    "babel-polyfill": "^6.8.0",
     "babel-preset-es2015": "^6.3.13",
     "babelify": "^7.2.0",
     "browserify-test": "^2.1.2",
@@ -43,7 +44,7 @@
     "idb-schema": "^3.2.1",
     "indexeddbshim": "^2.2.1",
     "polyfill-function-prototype-bind": "0.0.1",
-    "regenerator": "^0.8.42",
+    "regenerator-runtime-only": "^0.8.38",
     "zuul": "^3.8.0"
   }
 }
