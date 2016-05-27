@@ -136,7 +136,7 @@ the operation and `value` represents the old key from which to move or copy.
 ```js
 await batch(db, 'books', [
   { type: 'add', key: 1, value: { name: 'M1', frequency: 12 } },
-  { type: 'del', key: 2 }
+  { type: 'del', key: 2 },
   { type: 'put', value: { id: 3, name: 'M3', frequency: 24 } }, // no key
 ])
 ```
@@ -150,6 +150,30 @@ place until a copy has been made).
 At present, there are no options to allow `copy` or `move` to work across
 stores or to involve sub-objects. You should instead use functions to conduct
 such operations.
+
+**Array notation (succinct)** is sugar for the array notation.
+
+The above batch operation can be expressed in the following more succinct
+format:
+
+```js
+await batch(db, 'books', [
+  { add: { key: 1, value: { name: 'M1', frequency: 12 } } },
+  { del: { key: 2 } },
+  { put: { value: { id: 3, name: 'M3', frequency: 24 } } }, // no key
+])
+```
+
+Multiple operations can also be merged into a single child array:
+
+```js
+await batch(db, 'books', [
+  { add: [
+    { key: 1, value: { name: 'M1', frequency: 12 } } }
+    { key: 2, value: { name: 'M2', frequency: 8 } } }
+  ] }
+])
+```
 
 **Object notation** is sugar on top of array notation for `put`/`del`
 operations. Set `key` to `'\0'` in order to delete a value.

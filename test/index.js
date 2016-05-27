@@ -16,7 +16,9 @@ import { request } from 'idb-request'
 import Schema from 'idb-schema'
 import batch, { transactionalBatch, getStoreNames } from '../src'
 
-describe('idb-batch', () => {
+describe('idb-batch', function batchDesc() {
+  this.timeout(5000)
+
   let db
   const dbName = 'idb-batch'
   const schema = new Schema()
@@ -88,6 +90,36 @@ describe('idb-batch', () => {
     expect(await count(db, 'magazines')).equal(0)
   })
 
+  it('supports special array syntax', async () => {
+    const res1 = await batch(db, 'magazines', [
+      { add: { key: 1, value: { name: 'M1', frequency: 12 } } },
+      { add: [
+        { key: 2, value: { name: 'M2', frequency: 24 } },
+        { value: { id: 3, name: 'M3', frequency: 6 } },
+        { value: { id: 4, name: 'M4', frequency: 52 } },
+      ] },
+    ])
+
+    expect(res1).eql([1, 2, 3, 4])
+    expect(await count(db, 'magazines')).equal(4)
+    expect(await get(db, 'magazines', 2)).eql({ id: 2, name: 'M2', frequency: 24 })
+    expect(await get(db, 'magazines', 4)).eql({ id: 4, name: 'M4', frequency: 52 })
+
+    const res2 = await batch(db, 'magazines', [
+      { del: { key: 1 } },
+      { put: { key: 2, value: { name: 'M2', frequency: 24, foo: 'bar' } } },
+      { del: [{ key: 3 }] },
+    ])
+
+    expect(res2).eql([undefined, 2, undefined])
+    expect(await count(db, 'magazines')).equal(2)
+    expect(await get(db, 'magazines', 2)).eql({ id: 2, name: 'M2', frequency: 24, foo: 'bar' })
+
+    const res3 = await batch(db, 'magazines', [{ clear: {} }])
+    expect(res3).eql([undefined])
+    expect(await count(db, 'magazines')).equal(0)
+  })
+
   it('works with any type of data (not only objects)', async () => {
     await batch(db, 'storage', {
       key1: 'value',
@@ -144,28 +176,33 @@ describe('idb-batch', () => {
       async () => await batch(db, 'magazines', [{ type: 'delete', key: 'foo' }]),
       async () => await batch(db, 'magazines', [['put', '1']]),
     ]
-    funcs.forEach(async (func, i) => {
-      try {
-        await func()
-      } catch (err) {
-        errors.push(err)
-      }
-      if (i === funcs.length - 1) {
-        expect(errors).eql([
+    const funcVals = funcs.values()
+
+    const runFunc = async () => {
+      const iter = funcVals.next()
+      if (iter.done) {
+        const errs = [
           'invalid arguments length',
           'invalid "storeName"',
           'invalid "ops"',
           'invalid type "delete"',
           'invalid op',
-        ].map((msg) => new TypeError(msg)))
+        ]
+        expect(errors).eql(errs)
         done()
       }
-    })
+      const func = iter.value
+      try {
+        await func()
+      } catch (err) {
+        errors.push(err.message)
+      }
+      runFunc()
+    }
+    runFunc()
   })
 
   describe('transactionalBatch', () => {
-    this.timeout(5000)
-
     it('supports batch in series', async () => {
       let gotCbResults = false
       let gotCb2Results = false

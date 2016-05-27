@@ -312,9 +312,24 @@ function validateAndCanonicalizeOps(ops) {
       return { key, value: typeof ops[key] === 'string' ? ops[key].replace(/^\0/, '') : ops[key], type: ops[key] === '\0' ? 'del' : 'put' }
     })
   }
-  ops.forEach((op) => {
-    if (!isPlainObj(op)) throw new TypeError('invalid op')
+  function checkOp(op) {
     if (['add', 'put', 'del', 'move', 'copy', 'clear'].indexOf(op.type) === -1) throw new TypeError(`invalid type "${op.type}"`)
+  }
+  ops.forEach((op, i) => {
+    if (!isPlainObj(op)) throw new TypeError('invalid op')
+    const opKeys = Object.keys(op)
+    const type = opKeys[0]
+    if (opKeys.length === 1 && type !== 'type') {
+      op = op[type]
+      const opers = Array.isArray(op) ? op : [op]
+      ops.splice(i, 1, ...(opers.map((oper) => {
+        Object.assign(oper, { type })
+        checkOp(oper)
+        return oper
+      })))
+      return
+    }
+    checkOp(op)
   })
   return ops
 }
