@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "prepublish": "babel src --out-dir lib",
-    "test": "eslint src/ test/ && browserify-test -t babelify && SAUCE_USERNAME=idb-batch zuul --tunnel-host http://treojs.com --no-coverage -- test/index.js",
+    "test": "standard && browserify-test -t babelify && SAUCE_USERNAME=idb-batch zuul --tunnel-host http://treojs.com --no-coverage -- test/index.js",
     "development": "browserify-test -t babelify --watch"
   },
   "dependencies": {
@@ -34,16 +34,13 @@
     "browserify-test": "^2.2.0",
     "chai": "^3.5.0",
     "es6-promise": "^4.0.5",
-    "eslint": "^3.7.1",
-    "eslint-config-standard": "^6.2.0",
-    "eslint-plugin-promise": "^3.0.0",
-    "eslint-plugin-standard": "^2.0.1",
     "idb-factory": "^1.0.0",
     "idb-request": "^3.2.0",
     "idb-schema": "^3.2.1",
     "indexeddbshim": "^2.2.1",
     "polyfill-function-prototype-bind": "0.0.1",
     "regenerator-runtime": "^0.9.5",
+    "standard": "^8.3.0",
     "zuul": "^3.11.1"
   }
 }
