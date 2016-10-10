@@ -1,11 +1,11 @@
-// setup PhantomJS, Webkit, IE env
+/* eslint-env mocha */
 import 'polyfill-function-prototype-bind'
 import 'indexeddbshim'
 import 'regenerator/runtime'
 import 'es6-promise/auto'
 
 if (navigator.userAgent.indexOf('Trident') !== -1) {
-  console.log('force IE to enable compound indexes using indexeddbshim') // eslint-disable-line
+  console.log('force IE to enable compound indexes using indexeddbshim')
   window.shimIndexedDB.__useShim()
 }
 
@@ -39,7 +39,7 @@ describe('idb-schema', () => {
     const res1 = await batch(db, 'books', {
       key1: { title: 'B1', author: 'Bob' },
       key2: { title: 'B2', author: 'Bob' },
-      3: { title: 'B3', author: 'Karl' },
+      3: { title: 'B3', author: 'Karl' }
     })
 
     expect(res1.sort()).eql(['key1', 'key2', '3'].sort()) // object keys don't gurante order
@@ -51,7 +51,7 @@ describe('idb-schema', () => {
     const res2 = await batch(db, 'books', {
       key1: null,
       key2: null,
-      3: { title: 'B3', author: 'Bob' },
+      3: { title: 'B3', author: 'Bob' }
     })
 
     expect(res2.sort()).eql([undefined, undefined, '3'].sort())
@@ -64,7 +64,7 @@ describe('idb-schema', () => {
       { type: 'add', key: 1, value: { name: 'M1', frequency: 12 } },
       { type: 'add', key: 2, value: { name: 'M2', frequency: 24 } },
       { type: 'add', value: { id: 3, name: 'M3', frequency: 6 } },
-      { type: 'add', value: { id: 4, name: 'M4', frequency: 52 } },
+      { type: 'add', value: { id: 4, name: 'M4', frequency: 52 } }
     ])
 
     expect(res1).eql([1, 2, 3, 4])
@@ -75,7 +75,7 @@ describe('idb-schema', () => {
     const res2 = await batch(db, 'magazines', [
       { type: 'del', key: 1 },
       { type: 'put', key: 2, value: { name: 'M2', frequency: 24, foo: 'bar' } },
-      { type: 'del', key: 3 },
+      { type: 'del', key: 3 }
     ])
 
     expect(res2).eql([undefined, 2, undefined])
@@ -88,7 +88,7 @@ describe('idb-schema', () => {
       key1: 'value',
       key2: 123456,
       key3: [1, 2, 3],
-      key4: { foo: 'bar' },
+      key4: { foo: 'bar' }
     })
 
     expect(await count(db, 'storage')).equal(4)
@@ -105,7 +105,7 @@ describe('idb-schema', () => {
       await batch(db, 'books', {
         1: { title: 'book', author: 'Petr' },
         2: { title: 'book', author: 'John' }, // error byTitle index
-        3: { title: 'my book', author: 'John' },
+        3: { title: 'my book', author: 'John' }
       })
     } catch (err) {
       errors.push('simple index')
@@ -115,7 +115,7 @@ describe('idb-schema', () => {
       await batch(db, 'magazines', [
         { type: 'add', value: { name: 'magazine', frequency: 1 } },
         { type: 'add', value: { name: 'magazine', frequency: 1 } }, // error byNameAndFrequency index
-        { type: 'add', value: { name: 'magazine', frequency: 2 } },
+        { type: 'add', value: { name: 'magazine', frequency: 2 } }
       ])
     } catch (err) {
       errors.push('compound index')
@@ -140,10 +140,10 @@ describe('idb-schema', () => {
  * IDB store helpers.
  */
 
-function count(db, storeName) {
+function count (db, storeName) {
   return request(db.transaction(storeName).objectStore(storeName).count())
 }
 
-function get(db, storeName, key) {
+function get (db, storeName, key) {
   return request(db.transaction(storeName).objectStore(storeName).get(key))
 }

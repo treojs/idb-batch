@@ -22,16 +22,16 @@ const map = [].map
  * Object syntax:
  *
  * {
- * 	 key1: 'val1', // put val1 to key1
- * 	 key2: 'val2', // put val2 to key2
- * 	 key3: null,   // delete key
+ *   key1: 'val1', // put val1 to key1
+ *   key2: 'val2', // put val2 to key2
+ *   key3: null,   // delete key
  * }
  *
  * @param {Array|Object} ops
  * @return {Promise}
  */
 
-export default function batch(db, storeName, ops) {
+export default function batch (db, storeName, ops) {
   if (arguments.length !== 3) throw new TypeError('invalid arguments length')
   if (typeof storeName !== 'string') throw new TypeError('invalid "storeName"')
   if (!Array.isArray(ops) && !isPlainObj(ops)) throw new TypeError('invalid "ops"')
@@ -55,7 +55,7 @@ export default function batch(db, storeName, ops) {
     tr.oncomplete = () => resolve(results)
     next()
 
-    function next() {
+    function next () {
       const { type, key } = ops[currentIndex]
       if (type === 'del') return request(store.delete(key))
 
@@ -72,7 +72,7 @@ export default function batch(db, storeName, ops) {
       })
     }
 
-    function request(req) {
+    function request (req) {
       currentIndex += 1
 
       req.onerror = handleError(reject)
@@ -96,7 +96,7 @@ export default function batch(db, storeName, ops) {
  * @param {Function} cb(err, uniqueRecordsCounter)
  */
 
-function countUniqueIndexes(store, key, val, cb) {
+function countUniqueIndexes (store, key, val, cb) {
   // rely on native support
   if (!isSafari && global.indexedDB !== global.shimIndexedDB) return cb()
 
@@ -134,7 +134,7 @@ function countUniqueIndexes(store, key, val, cb) {
  * @return {Boolean}
  */
 
-function isCompound(index) {
+function isCompound (index) {
   return typeof index.keyPath !== 'string'
 }
 
@@ -145,7 +145,7 @@ function isCompound(index) {
  * @return {Function}
  */
 
-function handleError(cb) {
+function handleError (cb) {
   return (e) => {
     // prevent global error throw https://bugzilla.mozilla.org/show_bug.cgi?id=872873
     if (typeof e.preventDefault === 'function') e.preventDefault()

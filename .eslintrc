@@ -1,13 +1,3 @@
 {
-  "env": {
-    "mocha": true
-  },
-  "extends": "airbnb/base",
-  "parser": "babel-eslint",
-  "rules": {
-    "semi": [2, "never"],
-    "no-use-before-define": [2, "nofunc"],
-    "no-param-reassign": 0,
-    "id-length": 0,
-  }
+  "extends": "standard"
 }
