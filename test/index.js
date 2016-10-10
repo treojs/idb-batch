@@ -2,9 +2,8 @@
 import 'polyfill-function-prototype-bind'
 import 'indexeddbshim'
 import 'regenerator/runtime'
-import ES6Promise from 'es6-promise'
+import 'es6-promise/auto'
 
-ES6Promise.polyfill()
 if (navigator.userAgent.indexOf('Trident') !== -1) {
   console.log('force IE to enable compound indexes using indexeddbshim') // eslint-disable-line
   window.shimIndexedDB.__useShim()
