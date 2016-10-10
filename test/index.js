@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import 'polyfill-function-prototype-bind'
 import 'indexeddbshim'
-import 'regenerator/runtime'
+import 'regenerator-runtime/runtime'
 import 'es6-promise/auto'
 
 if (navigator.userAgent.indexOf('Trident') !== -1) {
