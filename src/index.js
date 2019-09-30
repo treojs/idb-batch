@@ -24,9 +24,9 @@ const map = [].map
  * Object syntax:
  *
  * {
- * 	 key1: 'val1', // put val1 to key1
- * 	 key2: 'val2', // put val2 to key2
- * 	 key3: null,   // delete key
+ *   key1: 'val1', // put val1 to key1
+ *   key2: 'val2', // put val2 to key2
+ *   key3: null,   // delete key
  * }
  *
  * @param {Array|Object} ops Operations
@@ -34,7 +34,7 @@ const map = [].map
  * @return {Promise} Resolves to the result of the operations
  */
 
-export default function batch(db, storeName, ops, opts) {
+export default function batch (db, storeName, ops, opts) {
   if (typeof storeName !== 'string') return Promise.reject(new TypeError('invalid "storeName"'))
   if (![3, 4].includes(arguments.length)) return Promise.reject(new TypeError('invalid arguments length'))
   try {
@@ -45,7 +45,7 @@ export default function batch(db, storeName, ops, opts) {
   return transactionalBatch(db, { [storeName]: ops }, opts).then((arr) => arr[0][storeName])
 }
 
-export function getStoreNames(storeOpsArr) {
+export function getStoreNames (storeOpsArr) {
   if (isPlainObj(storeOpsArr)) storeOpsArr = [storeOpsArr]
   return storeOpsArr.reduce((storeNames, opObj) => {
     // This has no effect if the opObj is a function
@@ -82,7 +82,7 @@ export function getStoreNames(storeOpsArr) {
  * @return {Promise} Resolves to an array containing the results of the operations for each store
  */
 
-export function transactionalBatch(tr, storeOpsArr, opts = { parallel: false, extraStores: [], resolveEarly: false, adapterCb: null }) {
+export function transactionalBatch (tr, storeOpsArr, opts = { parallel: false, extraStores: [], resolveEarly: false, adapterCb: null }) {
   if (![2, 3].includes(arguments.length)) return Promise.reject(new TypeError('invalid arguments length'))
   if (isPlainObj(storeOpsArr)) storeOpsArr = [storeOpsArr]
   const storeOpsArrIter = storeOpsArr.keys()
@@ -145,7 +145,7 @@ export function transactionalBatch(tr, storeOpsArr, opts = { parallel: false, ex
         iterateStores(ct, storeResults, storeNames, storeOpsKeys, storeOpsObj)
       }
 
-      function next(storeOpsIdx, opIndex) {
+      function next (storeOpsIdx, opIndex) {
         const { type, key } = ops[opIndex]
         if (type === 'clear') {
           request(storeOpsIdx, opIndex, storeName, store.clear())
@@ -182,7 +182,7 @@ export function transactionalBatch(tr, storeOpsArr, opts = { parallel: false, ex
         })
       }
 
-      function request(storeOpsIdx, opIndex, storeNm, req) {
+      function request (storeOpsIdx, opIndex, storeNm, req) {
         req.onerror = handleError(reject)
         req.onsuccess = (e) => {
           if (!storeResults[storeNm]) {
@@ -236,7 +236,7 @@ export function transactionalBatch(tr, storeOpsArr, opts = { parallel: false, ex
  * @param {Function} cb(err, uniqueRecordsCounter)
  */
 
-function countUniqueIndexes(store, key, val, cb) {
+function countUniqueIndexes (store, key, val, cb) {
   // rely on native support
   if (!isSafari && global.indexedDB !== global.shimIndexedDB) return cb()
 
@@ -274,7 +274,7 @@ function countUniqueIndexes(store, key, val, cb) {
  * @return {Boolean}
  */
 
-function isCompound(index) {
+function isCompound (index) {
   return typeof index.keyPath !== 'string'
 }
 
@@ -285,7 +285,7 @@ function isCompound(index) {
  * @return {Function}
  */
 
-function handleError(cb) {
+function handleError (cb) {
   return (e) => {
     // prevent global error throw https://bugzilla.mozilla.org/show_bug.cgi?id=872873
     if (typeof e.preventDefault === 'function') e.preventDefault()
@@ -300,7 +300,7 @@ function handleError(cb) {
  * @return {Array} Canonicalized operations array
  */
 
-function validateAndCanonicalizeOps(ops) {
+function validateAndCanonicalizeOps (ops) {
   if (ops === 'clear') {
     ops = [{ type: 'clear' }]
   }
@@ -312,7 +312,7 @@ function validateAndCanonicalizeOps(ops) {
       return { key, value: typeof ops[key] === 'string' ? ops[key].replace(/^\0/, '') : ops[key], type: ops[key] === '\0' ? 'del' : 'put' }
     })
   }
-  function checkOp(op) {
+  function checkOp (op) {
     if (['add', 'put', 'del', 'move', 'copy', 'clear'].indexOf(op.type) === -1) throw new TypeError(`invalid type "${op.type}"`)
   }
   ops.forEach((op, i) => {
