@@ -17,30 +17,33 @@
     "batch"
   ],
   "scripts": {
+    "lint": "eslint .",
+    "lint-fix": "eslint . --fix",
     "prepublish": "babel src --out-dir lib",
     "test": "standard && browserify-test -t babelify && SAUCE_USERNAME=idb-batch zuul --tunnel-host http://treojs.com --no-coverage -- test/index.js",
     "development": "browserify-test -t babelify --watch"
   },
   "dependencies": {
-    "is-plain-obj": "^1.1.0",
+    "is-plain-obj": "^2.0.0",
     "is-safari": "^1.0.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.16.0",
-    "babel-core": "^6.17.0",
-    "babel-plugin-add-module-exports": "^0.2.1",
-    "babel-preset-latest": "^6.16.0",
-    "babelify": "^7.3.0",
-    "browserify-test": "^2.2.0",
-    "chai": "^3.5.0",
-    "es6-promise": "^4.0.5",
+    "@babel/core": "^7.6.2",
+    "babel-cli": "^6.26.0",
+    "babel-plugin-add-module-exports": "^1.0.2",
+    "babel-preset-latest": "^6.24.1",
+    "babelify": "^10.0.0",
+    "browserify-test": "^3.1.0",
+    "chai": "^4.2.0",
+    "es6-promise": "^4.2.8",
+    "express-state": "^1.4.0",
     "idb-factory": "^1.0.0",
-    "idb-request": "^3.2.0",
+    "idb-request": "^3.2.1",
     "idb-schema": "^3.2.1",
-    "indexeddbshim": "^2.2.1",
+    "indexeddbshim": "^5.0.0",
     "polyfill-function-prototype-bind": "0.0.1",
-    "regenerator-runtime": "^0.9.5",
-    "standard": "^8.3.0",
-    "zuul": "^3.11.1"
+    "regenerator-runtime": "^0.13.3",
+    "standard": "^14.3.1",
+    "zuul": "^3.12.0"
   }
 }

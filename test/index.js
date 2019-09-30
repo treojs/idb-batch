@@ -4,29 +4,31 @@ import 'indexeddbshim'
 import 'regenerator-runtime/runtime'
 import 'es6-promise/auto'
 
+import { expect } from 'chai'
+import { del, open } from 'idb-factory'
+import { request } from 'idb-request'
+import Schema from 'idb-schema'
+import batch, { transactionalBatch, getStoreNames } from '../src'
+
 if (navigator.userAgent.indexOf('Trident') !== -1) {
   console.log('force IE to enable compound indexes using indexeddbshim')
   window.shimIndexedDB.__useShim()
 }
 
-import { expect } from 'chai'
-import { del, open } from 'idb-factory'
-import { request } from 'idb-request'
-import Schema from 'idb-schema'
-import batch from '../src'
+describe('idb-batch', function batchDesc () {
+  this.timeout(5000)
 
-describe('idb-schema', () => {
   let db
-  const dbName = 'idb-schema'
+  const dbName = 'idb-batch'
   const schema = new Schema()
-  .addStore('books')
-  .addIndex('byTitle', 'title', { unique: true }) // simple index
-  .addIndex('byAuthor', 'author')
-  .addStore('magazines', { key: 'id', increment: true })
-  .addIndex('byName', 'name')
-  .addIndex('byNameAndFrequency', ['name', 'frequency'], { unique: true }) // compound index
-  .addStore('storage')
-  .addIndex('byFoo', 'foo')
+    .addStore('books')
+    .addIndex('byTitle', 'title', { unique: true }) // simple index
+    .addIndex('byAuthor', 'author')
+    .addStore('magazines', { key: 'id', increment: true })
+    .addIndex('byName', 'name')
+    .addIndex('byNameAndFrequency', ['name', 'frequency'], { unique: true }) // compound index
+    .addStore('storage')
+    .addIndex('byFoo', 'foo')
 
   beforeEach(async () => {
     db = await open(dbName, schema.version(), schema.callback())
@@ -42,15 +44,15 @@ describe('idb-schema', () => {
       3: { title: 'B3', author: 'Karl' }
     })
 
-    expect(res1.sort()).eql(['key1', 'key2', '3'].sort()) // object keys don't gurante order
+    expect(res1.sort()).eql(['key1', 'key2', '3'].sort()) // object keys don't guarantee order
     expect(await count(db, 'books')).equal(3)
     expect(await get(db, 'books', 'key1')).eql({ title: 'B1', author: 'Bob' })
     expect(await get(db, 'books', '3')).eql({ title: 'B3', author: 'Karl' })
     expect(await get(db, 'books', 3)).eql(undefined)
 
     const res2 = await batch(db, 'books', {
-      key1: null,
-      key2: null,
+      key1: '\0',
+      key2: '\0',
       3: { title: 'B3', author: 'Bob' }
     })
 
@@ -81,6 +83,42 @@ describe('idb-schema', () => {
     expect(res2).eql([undefined, 2, undefined])
     expect(await count(db, 'magazines')).equal(2)
     expect(await get(db, 'magazines', 2)).eql({ id: 2, name: 'M2', frequency: 24, foo: 'bar' })
+
+    const res3 = await batch(db, 'magazines', [{ type: 'clear' }])
+    expect(res3).eql([undefined])
+    expect(await count(db, 'magazines')).equal(0)
+  })
+
+  it('supports special array syntax', async () => {
+    const res1 = await batch(db, 'magazines', [
+      { add: { key: 1, value: { name: 'M1', frequency: 12 } } },
+      {
+        add: [
+          { key: 2, value: { name: 'M2', frequency: 24 } },
+          { value: { id: 3, name: 'M3', frequency: 6 } },
+          { value: { id: 4, name: 'M4', frequency: 52 } }
+        ]
+      }
+    ])
+
+    expect(res1).eql([1, 2, 3, 4])
+    expect(await count(db, 'magazines')).equal(4)
+    expect(await get(db, 'magazines', 2)).eql({ id: 2, name: 'M2', frequency: 24 })
+    expect(await get(db, 'magazines', 4)).eql({ id: 4, name: 'M4', frequency: 52 })
+
+    const res2 = await batch(db, 'magazines', [
+      { del: { key: 1 } },
+      { put: { key: 2, value: { name: 'M2', frequency: 24, foo: 'bar' } } },
+      { del: [{ key: 3 }] }
+    ])
+
+    expect(res2).eql([undefined, 2, undefined])
+    expect(await count(db, 'magazines')).equal(2)
+    expect(await get(db, 'magazines', 2)).eql({ id: 2, name: 'M2', frequency: 24, foo: 'bar' })
+
+    const res3 = await batch(db, 'magazines', [{ clear: {} }])
+    expect(res3).eql([undefined])
+    expect(await count(db, 'magazines')).equal(0)
   })
 
   it('works with any type of data (not only objects)', async () => {
@@ -88,14 +126,18 @@ describe('idb-schema', () => {
       key1: 'value',
       key2: 123456,
       key3: [1, 2, 3],
-      key4: { foo: 'bar' }
+      key4: { foo: 'bar' },
+      key5: '\0abc',
+      key6: '\0\0def'
     })
 
-    expect(await count(db, 'storage')).equal(4)
+    expect(await count(db, 'storage')).equal(6)
     expect(await get(db, 'storage', 'key1')).equal('value')
     expect(await get(db, 'storage', 'key2')).equal(123456)
     expect(await get(db, 'storage', 'key3')).eql([1, 2, 3])
     expect(await get(db, 'storage', 'key4')).eql({ foo: 'bar' })
+    expect(await get(db, 'storage', 'key5')).eql('abc')
+    expect(await get(db, 'storage', 'key6')).eql('\0def')
   })
 
   it('validates unique indexes', async () => {
@@ -126,13 +168,200 @@ describe('idb-schema', () => {
     expect(await count(db, 'magazines')).equal(1)
   })
 
-  it('validates arguments', () => {
-    expect(() => batch(db, 'books')).throws('invalid arguments length')
-    expect(() => batch(db, 123, { a: 1 })).throws('invalid "storeName"')
-    expect(() => batch(db, 'books', JSON.stringify({ a: 1 }))).throws('invalid "ops"')
+  it('validates arguments', async (done) => {
+    const errors = []
+    const funcs = [
+      async () => batch(db, 'books'),
+      async () => batch(db, 123, { a: 1 }),
+      async () => batch(db, 'books', JSON.stringify({ a: 1 })),
+      async () => batch(db, 'magazines', [{ type: 'delete', key: 'foo' }]),
+      async () => batch(db, 'magazines', [['put', '1']])
+    ]
+    const funcVals = funcs.values()
 
-    expect(() => batch(db, 'magazines', [{ type: 'delete', key: 'foo' }])).throws('invalid type "delete"')
-    expect(() => batch(db, 'magazines', [['put', '1']])).throws('invalid op')
+    const runFunc = async () => {
+      const iter = funcVals.next()
+      if (iter.done) {
+        const errs = [
+          'invalid arguments length',
+          'invalid "storeName"',
+          'invalid "ops"',
+          'invalid type "delete"',
+          'invalid op'
+        ]
+        expect(errors).eql(errs)
+        done()
+      }
+      const func = iter.value
+      try {
+        await func()
+      } catch (err) {
+        errors.push(err.message)
+      }
+      runFunc()
+    }
+    runFunc()
+  })
+
+  describe('transactionalBatch', () => {
+    it('supports batch in series', async () => {
+      let gotCbResults = false
+      let gotCb2Results = false
+      let prom
+      const res = await transactionalBatch(db, [
+        {
+          magazines: [
+            { type: 'add', key: 1, value: { name: 'M1', frequency: 12 } },
+            { type: 'add', key: 2, value: { name: 'M2', frequency: 24 } },
+            { type: 'add', key: 3, value: { name: 'M3', frequency: 6 } },
+            { type: 'del', key: 2 }
+          ]
+        },
+        function callbackInTransaction (tr) {
+          prom = new Promise((resolve) => {
+            const magazines = tr.objectStore('magazines')
+            const req = magazines.add({ name: 'M4', frequency: 8, [magazines.keyPath]: 5 })
+            req.onsuccess = (e) => {
+              expect(e.target.result).equal(5)
+              // We can't do a timeout here as with the parallel test as we need the transaction to be the same
+              const req2 = magazines.put({ name: 'M1', frequency: 17, [magazines.keyPath]: 1 })
+              req2.onsuccess = (e2) => {
+                expect(e2.target.result).equal(1)
+                gotCbResults = true
+                expect(gotCb2Results).equal(false)
+                resolve('finished')
+              }
+            }
+          })
+          return prom
+        },
+        function callback2InTransaction (tr) {
+          const magazines = tr.objectStore('magazines')
+          const req = magazines.get(1)
+          req.onsuccess = (e) => {
+            gotCb2Results = true
+            expect(e.target.result).eql({ name: 'M1', frequency: 17, id: 1 })
+          }
+        },
+        {
+          books: [
+            { type: 'put', key: 1, value: { name: 'M1', frequency: 12 } },
+            { type: 'move', key: 2, value: 1 },
+            { type: 'copy', key: 3, value: 2 }
+          ],
+          storage: 'clear'
+        }
+      ])
+
+      expect(res).eql([{ magazines: [1, 2, 3, undefined] }, prom, undefined, { books: [1, 2, undefined, 3], storage: [undefined] }])
+      expect(await count(db, 'magazines')).equal(3)
+      expect(await count(db, 'books')).equal(2)
+      expect(await count(db, 'storage')).equal(0)
+      expect(gotCbResults).equal(true)
+    })
+
+    it('supports batch in parallel', async (done) => {
+      let gotCbResults = false
+      let gotCb2Results = false
+      const res = await transactionalBatch(db, [
+        {
+          magazines: [
+            { type: 'add', key: 1, value: { name: 'M1', frequency: 12 } },
+            { type: 'add', key: 2, value: { name: 'M2', frequency: 24 } },
+            { type: 'add', key: 3, value: { name: 'M3', frequency: 6 } },
+            { type: 'del', key: 2 }
+          ]
+        },
+        function callbackInTransaction (tr) {
+          return new Promise((resolve) => {
+            const magazines = tr.objectStore('magazines')
+            const req = magazines.add({ name: 'M4', frequency: 8, [magazines.keyPath]: 5 })
+            req.onsuccess = (e) => {
+              expect(e.target.result).equal(5)
+              setTimeout(() => { // To test parallel we need a timeout, but this requires our needing to
+                // create the transaction anew (though after a long enough time to ensure the original transaction is not still open)
+                const trans = db.transaction('magazines', 'readwrite')
+                const mags = trans.objectStore('magazines')
+                const req2 = mags.put({ name: 'M1', frequency: 17, [mags.keyPath]: 1 })
+                req2.onsuccess = (e2) => {
+                  expect(e2.target.result).equal(1)
+                  gotCbResults = true
+                  expect(gotCb2Results).equal(true)
+                  resolve('finished')
+                }
+              }, 500)
+            }
+          })
+        },
+        function callback2InTransaction (tr) {
+          const magazines = tr.objectStore('magazines')
+          const req = magazines.get(1)
+          req.onsuccess = (e) => {
+            gotCb2Results = true
+            expect(gotCbResults).equal(false)
+            expect(e.target.result).eql({ name: 'M1', frequency: 12, id: 1 })
+          }
+        },
+        {
+          books: [
+            { type: 'put', key: 1, value: { name: 'M1', frequency: 12 } },
+            { type: 'move', key: 2, value: 1 },
+            { type: 'copy', key: 3, value: 2 }
+          ],
+          storage: 'clear'
+        }
+      ], { parallel: true })
+      expect(res).eql([{ magazines: [1, 2, 3, undefined] }, new Promise(() => {}), undefined, { books: [1, 2, undefined, 3], storage: [undefined] }])
+      expect(await count(db, 'magazines')).equal(3)
+      expect(await count(db, 'books')).equal(2)
+      expect(await count(db, 'storage')).equal(0)
+      res[1].then((result) => {
+        expect(result).equal('finished')
+        done()
+      })
+    })
+
+    it('supports resolving early (and continuing transaction)', async (done) => {
+      const ops = [
+        {
+          magazines: [
+            { type: 'add', key: 1, value: { name: 'M1', frequency: 12 } },
+            { type: 'add', key: 2, value: { name: 'M2', frequency: 24 } },
+            { type: 'add', key: 3, value: { name: 'M3', frequency: 6 } },
+            { type: 'del', key: 2 }
+          ]
+        }
+      ]
+      const trans = db.transaction(getStoreNames(ops), 'readwrite')
+      const res = await transactionalBatch(trans, ops, { resolveEarly: true })
+      expect(res).eql([{ magazines: [1, 2, 3, undefined] }])
+      const magazines = trans.objectStore('magazines')
+      const req = magazines.add({ name: 'M4', frequency: 8, [magazines.keyPath]: 5 })
+      req.onsuccess = (e) => {
+        expect(e.target.result).equal(5)
+        done()
+      }
+    })
+
+    it('supports aborting a batch transaction', async () => {
+      try {
+        await transactionalBatch(db, [
+          {
+            magazines: [
+              { type: 'add', key: 1, value: { name: 'M1', frequency: 12 } },
+              { type: 'add', key: 2, value: { name: 'M2', frequency: 24 } },
+              { type: 'add', key: 3, value: { name: 'M3', frequency: 6 } },
+              { type: 'del', key: 2 }
+            ]
+          },
+          function callbackInTransaction (tr) {
+            tr.abort()
+          }
+        ])
+      } catch (err) {
+        expect(await count(db, 'magazines')).equal(0)
+      }
+    })
   })
 })
 
