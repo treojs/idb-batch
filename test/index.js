@@ -1,13 +1,8 @@
 /* eslint-env mocha */
 import 'polyfill-function-prototype-bind'
 import 'indexeddbshim'
-import 'regenerator-runtime-only/runtime'
+import 'regenerator-runtime/runtime'
 import 'es6-promise/auto'
-
-if (navigator.userAgent.indexOf('Trident') !== -1) {
-  console.log('force IE to enable compound indexes using indexeddbshim')
-  window.shimIndexedDB.__useShim()
-}
 
 import { expect } from 'chai'
 import { del, open } from 'idb-factory'
@@ -15,20 +10,25 @@ import { request } from 'idb-request'
 import Schema from 'idb-schema'
 import batch, { transactionalBatch, getStoreNames } from '../src'
 
+if (navigator.userAgent.indexOf('Trident') !== -1) {
+  console.log('force IE to enable compound indexes using indexeddbshim')
+  window.shimIndexedDB.__useShim()
+}
+
 describe('idb-batch', function batchDesc () {
   this.timeout(5000)
 
   let db
   const dbName = 'idb-batch'
   const schema = new Schema()
-  .addStore('books')
-  .addIndex('byTitle', 'title', { unique: true }) // simple index
-  .addIndex('byAuthor', 'author')
-  .addStore('magazines', { key: 'id', increment: true })
-  .addIndex('byName', 'name')
-  .addIndex('byNameAndFrequency', ['name', 'frequency'], { unique: true }) // compound index
-  .addStore('storage')
-  .addIndex('byFoo', 'foo')
+    .addStore('books')
+    .addIndex('byTitle', 'title', { unique: true }) // simple index
+    .addIndex('byAuthor', 'author')
+    .addStore('magazines', { key: 'id', increment: true })
+    .addIndex('byName', 'name')
+    .addIndex('byNameAndFrequency', ['name', 'frequency'], { unique: true }) // compound index
+    .addStore('storage')
+    .addIndex('byFoo', 'foo')
 
   beforeEach(async () => {
     db = await open(dbName, schema.version(), schema.callback())
@@ -92,11 +92,13 @@ describe('idb-batch', function batchDesc () {
   it('supports special array syntax', async () => {
     const res1 = await batch(db, 'magazines', [
       { add: { key: 1, value: { name: 'M1', frequency: 12 } } },
-      { add: [
-        { key: 2, value: { name: 'M2', frequency: 24 } },
-        { value: { id: 3, name: 'M3', frequency: 6 } },
-        { value: { id: 4, name: 'M4', frequency: 52 } }
-      ] }
+      {
+        add: [
+          { key: 2, value: { name: 'M2', frequency: 24 } },
+          { value: { id: 3, name: 'M3', frequency: 6 } },
+          { value: { id: 4, name: 'M4', frequency: 52 } }
+        ]
+      }
     ])
 
     expect(res1).eql([1, 2, 3, 4])
@@ -169,11 +171,11 @@ describe('idb-batch', function batchDesc () {
   it('validates arguments', async (done) => {
     const errors = []
     const funcs = [
-      async () => await batch(db, 'books'),
-      async () => await batch(db, 123, { a: 1 }),
-      async () => await batch(db, 'books', JSON.stringify({ a: 1 })),
-      async () => await batch(db, 'magazines', [{ type: 'delete', key: 'foo' }]),
-      async () => await batch(db, 'magazines', [['put', '1']])
+      async () => batch(db, 'books'),
+      async () => batch(db, 123, { a: 1 }),
+      async () => batch(db, 'books', JSON.stringify({ a: 1 })),
+      async () => batch(db, 'magazines', [{ type: 'delete', key: 'foo' }]),
+      async () => batch(db, 'magazines', [['put', '1']])
     ]
     const funcVals = funcs.values()
 

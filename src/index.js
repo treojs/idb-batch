@@ -1,5 +1,3 @@
-import 'babel-polyfill' // Array.prototype.values, etc.
-
 import isPlainObj from 'is-plain-obj'
 import isSafari from 'is-safari'
 
@@ -67,9 +65,9 @@ export function getStoreNames (storeOpsArr) {
  * Object syntax:
  *
  * {
- * 	 key1: 'val1', // put val1 to key1
- * 	 key2: 'val2', // put val2 to key2
- * 	 key3: null,   // delete key
+ *   key1: 'val1', // put val1 to key1
+ *   key2: 'val2', // put val2 to key2
+ *   key3: null,   // delete key
  * }
  *
  * @param {IDBDatabase|IDBTransaction} tr IndexedDB database or transaction on which the batch will operate
@@ -96,7 +94,6 @@ export function transactionalBatch (tr, storeOpsArr, opts = { parallel: false, e
     tr.addEventListener('abort', handleError(reject))
     if (!opts.resolveEarly) tr.addEventListener('complete', () => resolve(results))
 
-    let iterateStoreOps
     const iterateStores = (ct, storeResults, storeNames, storeOpsKeys, storeOpsObj, serial) => {
       if (typeof storeOpsObj === 'function') {
         let ret
@@ -199,7 +196,7 @@ export function transactionalBatch (tr, storeOpsArr, opts = { parallel: false, e
       }
     }
 
-    iterateStoreOps = opts.parallel ? () => {
+    const iterateStoreOps = opts.parallel ? () => {
       for (let storeOpsObj = storeOpsArrIter.next(); !storeOpsObj.done; storeOpsObj = storeOpsArrIter.next()) {
         const val = storeOpsObj.value
         storeOpsObj = storeOpsArr[val]
@@ -243,8 +240,8 @@ function countUniqueIndexes (store, key, val, cb) {
   const indexes = slice.call(store.indexNames).map((indexName) => {
     const index = store.index(indexName)
     const indexVal = isCompound(index)
-    ? map.call(index.keyPath, (indexKey) => val[indexKey]).filter((v) => v)
-    : val[index.keyPath]
+      ? map.call(index.keyPath, (indexKey) => val[indexKey]).filter((v) => v)
+      : val[index.keyPath]
 
     return [index, indexVal]
   }).filter(([index, indexVal]) => {
